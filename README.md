@@ -1,6 +1,6 @@
 # iCloud Drive Backup
 
-Sichert ausgewählte Ordner aus den iCloud Drives mehrerer Familienmitglieder auf einen Linux-Server. Nutzt vorhandene Session-Tokens von [icloud_photos_downloader](https://github.com/icloud-photos-downloader/icloud_photos_downloader) oder authentifiziert sich selbstständig (inkl. 2FA).
+Sichert ausgewählte Ordner aus den iCloud Drives mehrerer Familienmitglieder auf einen Linux-Server. Nutzt vorhandene Session-Tokens von [pyicloud](https://github.com/picklepete/pyicloud) oder authentifiziert sich selbstständig (inkl. 2FA).
 
 ## Funktionsweise
 
