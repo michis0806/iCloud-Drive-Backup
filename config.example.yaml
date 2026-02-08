@@ -1,0 +1,49 @@
+# iCloud Drive Backup - Konfiguration
+#
+# Kopiere diese Datei nach config.yaml und passe sie an:
+#   cp config.example.yaml config.yaml
+#
+# Oder nutze ./setup.sh für eine interaktive Ersteinrichtung.
+
+jobs:
+  - name: "papa"
+    # Apple-ID
+    username: "papa@example.com"
+    # Verzeichnis mit den pyicloud Session-Dateien (Standard: ~/.pyicloud).
+    # pyicloud speichert Tokens als Flat-Files:
+    #   ~/.pyicloud/<normalisierte_apple_id>.session
+    #   ~/.pyicloud/<normalisierte_apple_id>.cookiejar
+    # Nur angeben, wenn abweichend vom Standard.
+    # cookie_directory: "~/.pyicloud"
+    # Optional: Passwort. Wenn leer, wird nur der gespeicherte Token verwendet.
+    # password: ""
+    # Verzeichnisse auf iCloud Drive, die gesichert werden sollen.
+    # Pfade relativ zum iCloud Drive Root, "/" für das gesamte Drive.
+    # Tipp: mit --select-folders interaktiv auswählen.
+    folders:
+      - "Documents"
+      - "Desktop"
+      # - "/"             # Gesamtes iCloud Drive sichern
+    # Ausschluss-Pattern (optional):
+    #   - Relativer Pfad (innerhalb jedes Folders): "Projects"
+    #   - Absoluter Pfad (ab iCloud Drive Root): "Documents/Projects"
+    #     → schließt nur Documents/Projects aus, nicht Desktop/Projects
+    #   - Glob-Pattern auf Datei-/Ordnernamen: ".git", "*.tmp", ".DS_Store"
+    exclude:
+      - ".git"
+      - ".DS_Store"
+    # Zielverzeichnis für die Sicherung
+    destination: "/mnt/backup/papa/icloud-drive"
+
+  - name: "mama"
+    username: "mama@example.com"
+    folders:
+      - "Documents"
+    destination: "/mnt/backup/mama/icloud-drive"
+
+# Optionale globale Einstellungen
+settings:
+  # Log-Level: DEBUG, INFO, WARNING, ERROR
+  log_level: "INFO"
+  # Trockenlauf: wenn true, werden keine Dateien geschrieben oder gelöscht
+  dry_run: false
