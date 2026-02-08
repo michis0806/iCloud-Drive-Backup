@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+.env
+.venv
+venv/
+env/
+
+*.log
+
+# Config may contain sensitive paths - keep the example, ignore user config
+config.yaml
+
+# State files
+.last_sync_*
+.icloud-backup-state-*.json
