@@ -255,19 +255,16 @@ The container will:
 
 ### 6. Synology Container Manager (GUI)
 
-Alternatively, you can set up the container via the Synology Container Manager UI:
+For a detailed step-by-step guide with DSM screenshots instructions, see **[SYNOLOGY.md](SYNOLOGY.md)**.
 
-1. **Image**: Build the image via SSH (step 3) or import it
-2. **Container** > **Create**:
-   - Image: `icloud-drive-backup`
-   - Volume mappings:
-     - `/volume1/docker/icloud-backup/config` → `/config`
-     - `/volume1/docker/icloud-backup/pyicloud` → `/root/.pyicloud`
-     - `/volume1/docker/icloud-backup/backups` → `/data`
-   - Environment variables:
-     - `CRON_SCHEDULE` = `0 3 * * *`
-     - `BACKUP_ARGS` = (empty, or e.g. `--verbose`)
-   - Restart policy: `unless-stopped`
+Quick summary:
+
+1. **Image**: Build the image via SSH (step 3)
+2. **Container Manager** > **Project** > **Create**: paste the docker-compose.yml
+3. Or create the container manually with these volume mappings:
+   - `/volume1/docker/icloud-backup/config` → `/config`
+   - `/volume1/docker/icloud-backup/pyicloud` → `/root/.pyicloud`
+   - `/volume1/docker/icloud-backup/backups` → `/data`
 
 ### Docker commands
 
