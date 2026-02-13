@@ -8,6 +8,11 @@ services:
       - CRON_SCHEDULE=0 3 * * *
       # Zusätzliche Argumente für backup.py (z.B. --verbose)
       - BACKUP_ARGS=
+      # Setup Web UI Port – zum Deaktivieren leer lassen oder Zeile entfernen
+      - SETUP_PORT=8080
+    ports:
+      # Setup Web UI (Anmeldung + 2FA im Browser)
+      - "8080:8080"
     volumes:
       # Konfigurationsdatei (config.yaml muss hier liegen)
       - ./config:/config

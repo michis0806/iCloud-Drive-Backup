@@ -3,7 +3,14 @@ set -euo pipefail
 
 CONFIG_FILE="/config/config.yaml"
 
-# --- Modus: Authentifizierung (interaktiv) ---
+# --- Modus: Setup Web UI (nur Weboberfläche, kein Backup) ---
+if [ "${1:-}" = "setup" ]; then
+    echo "=== Setup Web UI ==="
+    echo "Öffne http://<NAS-IP>:${SETUP_PORT:-8080} im Browser."
+    exec python /app/setup_web.py
+fi
+
+# --- Modus: Authentifizierung (interaktiv, per SSH) ---
 if [ "${1:-}" = "auth" ]; then
     echo "=== Interaktive Authentifizierung ==="
     shift
@@ -37,6 +44,12 @@ if [ "${1:-}" = "cron" ]; then
     echo "=== iCloud Drive Backup (Docker) ==="
     echo "Cron-Schedule: ${CRON_SCHEDULE}"
     echo "Zusätzliche Argumente: ${BACKUP_ARGS:-keine}"
+
+    # Setup Web UI im Hintergrund starten (falls SETUP_PORT gesetzt)
+    if [ -n "${SETUP_PORT:-}" ]; then
+        echo "Setup Web UI verfügbar auf Port ${SETUP_PORT}"
+        python /app/setup_web.py &
+    fi
     echo ""
 
     # Einmaliger Lauf beim Start

@@ -255,16 +255,14 @@ The container will:
 
 ### 6. Synology Container Manager (GUI)
 
-For a detailed step-by-step guide with DSM screenshots instructions, see **[SYNOLOGY.md](SYNOLOGY.md)**.
+For a detailed step-by-step guide, see **[SYNOLOGY.md](SYNOLOGY.md)**.
 
 Quick summary:
 
-1. **Image**: Build the image via SSH (step 3)
-2. **Container Manager** > **Project** > **Create**: paste the docker-compose.yml
-3. Or create the container manually with these volume mappings:
-   - `/volume1/docker/icloud-backup/config` → `/config`
-   - `/volume1/docker/icloud-backup/pyicloud` → `/root/.pyicloud`
-   - `/volume1/docker/icloud-backup/backups` → `/data`
+1. **Image**: Build the image via SSH (one-time only)
+2. **Container Manager** > **Project** > **Create**: paste the docker-compose.yml (with `SETUP_PORT=8080` and port mapping)
+3. **Browser**: Open `http://NAS-IP:8080` → log in with Apple ID + 2FA code
+4. Backups run automatically via cron – no SSH needed for authentication!
 
 ### Docker commands
 

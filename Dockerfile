@@ -11,6 +11,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backup.py .
+COPY setup_web.py .
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
@@ -22,6 +23,9 @@ VOLUME ["/config", "/data", "/root/.pyicloud"]
 
 ENV CRON_SCHEDULE="0 3 * * *"
 ENV BACKUP_ARGS=""
+ENV SETUP_PORT=""
+
+EXPOSE 8080
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["cron"]
