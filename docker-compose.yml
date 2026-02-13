@@ -1,0 +1,18 @@
+services:
+  icloud-backup:
+    build: .
+    container_name: icloud-drive-backup
+    restart: unless-stopped
+    environment:
+      # Cron-Schedule für automatische Backups (Standard: täglich 3:00 Uhr)
+      - CRON_SCHEDULE=0 3 * * *
+      # Zusätzliche Argumente für backup.py (z.B. --verbose)
+      - BACKUP_ARGS=
+    volumes:
+      # Konfigurationsdatei (config.yaml muss hier liegen)
+      - ./config:/config
+      # iCloud Session-Tokens (persistent, damit 2FA nicht wiederholt werden muss)
+      - ./pyicloud:/root/.pyicloud
+      # Backup-Zielverzeichnis – an dein Synology-Verzeichnis anpassen!
+      # Beispiel: /volume1/backups/icloud-drive:/data
+      - ./backups:/data

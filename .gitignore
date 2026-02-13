@@ -20,3 +20,8 @@ config.yaml
 # State files
 .last_sync_*
 .icloud-backup-state-*.json
+
+# Docker runtime data
+config/
+pyicloud/
+backups/

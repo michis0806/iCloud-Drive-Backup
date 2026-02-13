@@ -148,8 +148,156 @@ For a job with `destination: /mnt/backup/dad` and `folders: [Documents, Desktop]
     └── screenshot.png
 ```
 
+## Docker / Synology NAS
+
+The backup can run as a Docker container – ideal for a Synology NAS with Container Manager.
+
+### 1. Prepare directories
+
+Create the directory structure on your Synology (via SSH or File Station):
+
+```bash
+mkdir -p /volume1/docker/icloud-backup/config
+mkdir -p /volume1/docker/icloud-backup/pyicloud
+mkdir -p /volume1/docker/icloud-backup/backups
+```
+
+### 2. Create config.yaml
+
+Place your `config.yaml` in the config directory. **Important**: `destination` must point to `/data/...` (the mount point inside the container):
+
+```yaml
+jobs:
+  - name: "dad"
+    username: "dad@example.com"
+    folders:
+      - "Documents"
+      - "Desktop"
+    exclude:
+      - ".git"
+      - ".DS_Store"
+    destination: "/data/dad"
+
+  - name: "mom"
+    username: "mom@example.com"
+    folders:
+      - "Documents"
+    destination: "/data/mom"
+
+settings:
+  log_level: "INFO"
+  dry_run: false
+```
+
+### 3. Build and start
+
+Clone the repo and build the image on your Synology (via SSH):
+
+```bash
+cd /volume1/docker/icloud-backup
+git clone https://github.com/michis0806/iCloud-Drive-Backup.git app
+cd app
+
+# Build the Docker image
+docker build -t icloud-drive-backup .
+```
+
+### 4. Initial authentication (2FA)
+
+Before the container can run automatically, you must authenticate interactively once:
+
+```bash
+docker run -it --rm \
+  -v /volume1/docker/icloud-backup/config:/config \
+  -v /volume1/docker/icloud-backup/pyicloud:/root/.pyicloud \
+  -v /volume1/docker/icloud-backup/backups:/data \
+  icloud-drive-backup auth
+```
+
+This will prompt for your password and 2FA code. The trust token is stored in the `pyicloud/` directory and is valid for approximately 2 months.
+
+Repeat for each Apple ID / job if needed:
+
+```bash
+docker run -it --rm \
+  -v /volume1/docker/icloud-backup/config:/config \
+  -v /volume1/docker/icloud-backup/pyicloud:/root/.pyicloud \
+  -v /volume1/docker/icloud-backup/backups:/data \
+  icloud-drive-backup auth --job "mom"
+```
+
+### 5. Run with docker-compose
+
+Create or adjust the `docker-compose.yml`:
+
+```yaml
+services:
+  icloud-backup:
+    build: ./app
+    container_name: icloud-drive-backup
+    restart: unless-stopped
+    environment:
+      - CRON_SCHEDULE=0 3 * * *
+      - BACKUP_ARGS=
+    volumes:
+      - /volume1/docker/icloud-backup/config:/config
+      - /volume1/docker/icloud-backup/pyicloud:/root/.pyicloud
+      - /volume1/docker/icloud-backup/backups:/data
+```
+
+```bash
+docker-compose up -d
+```
+
+The container will:
+1. Run an initial backup immediately on start
+2. Then execute backups on the configured cron schedule (default: daily at 3:00 AM)
+
+### 6. Synology Container Manager (GUI)
+
+Alternatively, you can set up the container via the Synology Container Manager UI:
+
+1. **Image**: Build the image via SSH (step 3) or import it
+2. **Container** > **Create**:
+   - Image: `icloud-drive-backup`
+   - Volume mappings:
+     - `/volume1/docker/icloud-backup/config` → `/config`
+     - `/volume1/docker/icloud-backup/pyicloud` → `/root/.pyicloud`
+     - `/volume1/docker/icloud-backup/backups` → `/data`
+   - Environment variables:
+     - `CRON_SCHEDULE` = `0 3 * * *`
+     - `BACKUP_ARGS` = (empty, or e.g. `--verbose`)
+   - Restart policy: `unless-stopped`
+
+### Docker commands
+
+```bash
+# View logs
+docker logs -f icloud-drive-backup
+
+# Manual backup run
+docker exec icloud-drive-backup python /app/backup.py -c /config/config.yaml
+
+# Dry run
+docker exec icloud-drive-backup python /app/backup.py -c /config/config.yaml --dry-run
+
+# Re-authenticate (when token expires, every ~2 months)
+docker run -it --rm \
+  -v /volume1/docker/icloud-backup/config:/config \
+  -v /volume1/docker/icloud-backup/pyicloud:/root/.pyicloud \
+  -v /volume1/docker/icloud-backup/backups:/data \
+  icloud-drive-backup auth
+
+# Select folders interactively
+docker run -it --rm \
+  -v /volume1/docker/icloud-backup/config:/config \
+  -v /volume1/docker/icloud-backup/pyicloud:/root/.pyicloud \
+  -v /volume1/docker/icloud-backup/backups:/data \
+  icloud-drive-backup select-folders
+```
+
 ## Notes
 
 - **2FA**: `--auth-only` performs the full authentication interactively (password + 2FA code). Afterwards, a trust token is stored that is valid for approximately 2 months.
-- **Session Expiry**: When the session expires, run `--auth-only` again.
+- **Session Expiry**: When the session expires, run `--auth-only` again (or `docker run ... auth` for Docker).
 - **Shared Folders**: Shared folders may not be supported by the pyicloud API.
