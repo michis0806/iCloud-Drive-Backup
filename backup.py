@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from shutil import copyfileobj
@@ -260,8 +261,13 @@ def walk_remote(node, rel_path: str = "", folder_path: str = "",
 # Synchronisation
 # ---------------------------------------------------------------------------
 
-def download_file(node, dest_path: Path, dry_run: bool = False) -> bool:
-    """Lädt eine Datei von iCloud Drive herunter."""
+def download_file(node, dest_path: Path, dry_run: bool = False,
+                   max_retries: int = 3) -> bool:
+    """Lädt eine Datei von iCloud Drive herunter.
+
+    Bei transienten Fehlern (z.B. 404 ObjectNotFoundException) wird der
+    Download bis zu max_retries Mal mit exponentiellem Backoff wiederholt.
+    """
     if dry_run:
         log.info("[DRY RUN] Würde herunterladen: %s", dest_path)
         return True
@@ -269,23 +275,43 @@ def download_file(node, dest_path: Path, dry_run: bool = False) -> bool:
     dest_path.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = dest_path.with_suffix(dest_path.suffix + ".tmp")
 
-    try:
-        with node.open(stream=True) as response:
-            with open(tmp_path, "wb") as f:
-                copyfileobj(response.raw, f)
-        tmp_path.rename(dest_path)
+    docwsid = node.data.get("docwsid", "<unbekannt>")
+    zone = node.data.get("zone", "<unbekannt>")
 
-        # Änderungsdatum vom iCloud-Eintrag übernehmen
-        if node.date_modified:
-            mtime = node.date_modified.replace(tzinfo=timezone.utc).timestamp()
-            os.utime(dest_path, (mtime, mtime))
+    for attempt in range(1, max_retries + 1):
+        try:
+            with node.open(stream=True) as response:
+                with open(tmp_path, "wb") as f:
+                    copyfileobj(response.raw, f)
+            tmp_path.rename(dest_path)
 
-        return True
-    except Exception as exc:
-        log.error("Fehler beim Herunterladen von %s: %s", dest_path, exc)
-        if tmp_path.exists():
-            tmp_path.unlink()
-        return False
+            # Änderungsdatum vom iCloud-Eintrag übernehmen
+            if node.date_modified:
+                mtime = node.date_modified.replace(tzinfo=timezone.utc).timestamp()
+                os.utime(dest_path, (mtime, mtime))
+
+            return True
+        except Exception as exc:
+            if tmp_path.exists():
+                tmp_path.unlink()
+
+            if attempt < max_retries:
+                wait = 2 ** attempt  # 2s, 4s, 8s
+                log.warning(
+                    "Versuch %d/%d fehlgeschlagen für %s (docwsid=%s, zone=%s): %s "
+                    "– Wiederholung in %ds ...",
+                    attempt, max_retries, dest_path, docwsid, zone, exc, wait,
+                )
+                time.sleep(wait)
+            else:
+                log.error(
+                    "Fehler beim Herunterladen von %s nach %d Versuchen "
+                    "(docwsid=%s, zone=%s): %s",
+                    dest_path, max_retries, docwsid, zone, exc,
+                )
+                return False
+
+    return False
 
 
 def file_needs_update(node, local_path: Path) -> bool:
